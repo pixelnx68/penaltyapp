@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { getLedger, processPayment } from "@/lib/actions/penalties";
+import { getPaymentHistory, PaymentRecord } from "@/lib/actions/payments";
 import Toast from "@/components/Toast";
+import { Button, Input, Card, Badge } from "@/components/ui";
 
 interface LedgerEntry {
   _id: string;
@@ -19,6 +21,9 @@ export default function PaymentsPage() {
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [tab, setTab] = useState<"pay" | "history">("pay");
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     getLedger().then((data) => {
@@ -26,6 +31,16 @@ export default function PaymentsPage() {
       setLoading(false);
     });
   }, []);
+
+  useEffect(() => {
+    if (tab === "history") {
+      setHistoryLoading(true);
+      getPaymentHistory().then((data) => {
+        setPayments(data);
+        setHistoryLoading(false);
+      });
+    }
+  }, [tab]);
 
   const handlePay = async () => {
     if (!selected || !payAmount) return;
@@ -63,12 +78,36 @@ export default function PaymentsPage() {
     }
   };
 
-  if (loading) {
-    return <p className="text-center text-gray-400 py-8">Loading payments...</p>;
-  }
-
   return (
-    <div className="px-4 pt-4">
+    <div className="space-y-8 pb-10">
+      <header>
+        <h1 className="text-2xl font-bold">Process <span className="text-primary">Payments</span></h1>
+        <p className="text-sm text-muted">Handle dues and view transaction history.</p>
+      </header>
+
+      <div className="flex gap-1 rounded-2xl bg-surface/50 p-1.5 border border-white/5 backdrop-blur-md">
+        <button
+          onClick={() => setTab("pay")}
+          className={`flex-1 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 ${
+            tab === "pay" 
+              ? "bg-primary text-white shadow-lg shadow-primary/20" 
+              : "text-muted hover:text-foreground hover:bg-white/5"
+          }`}
+        >
+          Active Dues
+        </button>
+        <button
+          onClick={() => setTab("history")}
+          className={`flex-1 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 ${
+            tab === "history" 
+              ? "bg-primary text-white shadow-lg shadow-primary/20" 
+              : "text-muted hover:text-foreground hover:bg-white/5"
+          }`}
+        >
+          Payment History
+        </button>
+      </div>
+
       {toast && (
         <Toast
           message={toast.message}
@@ -77,89 +116,140 @@ export default function PaymentsPage() {
         />
       )}
 
-      <h1 className="text-xl font-bold mb-4">Payments</h1>
+      {tab === "pay" ? (
+        <>
+          {loading ? (
+            <div className="space-y-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-20 w-full animate-pulse rounded-2xl bg-surface" />
+              ))}
+            </div>
+          ) : players.length === 0 ? (
+            <Card className="text-center py-12 border-dashed border-white/10">
+              <p className="text-sm text-muted">No unpaid penalties found.</p>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {players.map((player) => (
+                <button
+                  key={player._id}
+                  onClick={() => {
+                    setSelected(player);
+                    setResult(null);
+                    setPayAmount("");
+                  }}
+                  className="w-full text-left transition-transform active:scale-[0.98]"
+                >
+                  <Card className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-base font-bold">{player.name}</span>
+                      {player.phone && (
+                        <span className="text-xs text-muted">{player.phone}</span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black text-secondary">Rs {player.totalUnpaid}</p>
+                      <p className="text-[10px] font-bold uppercase text-muted tracking-widest">Outstanding</p>
+                    </div>
+                  </Card>
+                </button>
+              ))}
+            </div>
+          )}
 
-      {players.length === 0 ? (
-        <p className="text-center text-gray-400 py-8">No unpaid penalties</p>
-      ) : (
-        <ul className="space-y-2">
-          {players.map((player) => (
-            <li key={player._id}>
-              <button
-                onClick={() => {
-                  setSelected(player);
-                  setResult(null);
-                  setPayAmount("");
-                }}
-                className="w-full flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 text-left"
-                style={{ minHeight: 44 }}
-              >
-                <div className="flex flex-col text-left">
-                  <span className="text-base font-medium">{player.name}</span>
-                  {player.phone && (
-                    <span className="text-sm text-gray-500">{player.phone}</span>
+          {selected && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
+              <div className="animate-in w-full max-w-[480px] rounded-t-[32px] bg-surface px-6 pb-10 pt-8 shadow-2xl">
+                <div className="mx-auto mb-6 h-1.5 w-12 rounded-full bg-white/10" />
+                
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold">{selected.name}</h2>
+                    <p className="text-sm text-muted">Outstanding: Rs {selected.totalUnpaid}</p>
+                  </div>
+                  <Badge variant="warning">Awaiting Payment</Badge>
+                </div>
+
+                <div className="space-y-6">
+                  <Input
+                    id="amount"
+                    type="number"
+                    label="Amount to Pay (Rs)"
+                    min="1"
+                    step="1"
+                    value={payAmount}
+                    onChange={(e) => setPayAmount(e.target.value)}
+                    placeholder="0.00"
+                    autoFocus
+                    className="text-xl py-4 font-bold text-primary"
+                  />
+
+                  {result && (
+                    <div className="rounded-2xl bg-green-500/10 border border-green-500/20 px-4 py-3 text-sm text-green-500 font-medium">
+                      {result}
+                    </div>
                   )}
+
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      className="flex-1 py-4"
+                      onClick={() => setSelected(null)}
+                    >
+                      Close
+                    </Button>
+                    <Button
+                      className="flex-1 py-4"
+                      onClick={handlePay}
+                      isLoading={processing}
+                      disabled={!payAmount}
+                    >
+                      Confirm Pay
+                    </Button>
+                  </div>
                 </div>
-                <span className="text-base font-semibold text-red-600">
-                  Rs {player.totalUnpaid}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {selected && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40">
-          <div className="w-full max-w-[480px] rounded-t-xl bg-white px-4 pb-8 pt-6">
-            <h2 className="text-lg font-bold mb-1">{selected.name}</h2>
-            <p className="text-sm text-gray-500 mb-4">
-              Outstanding: Rs {selected.totalUnpaid}
-            </p>
-
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="amount" className="block text-sm font-medium mb-1">
-                  Payment Amount (Rs)
-                </label>
-                <input
-                  id="amount"
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
-                  placeholder="Enter amount"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-black"
-                  style={{ minHeight: 44 }}
-                />
-              </div>
-
-              {result && (
-                <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
-                  {result}
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setSelected(null)}
-                  className="flex-1 rounded-lg border border-gray-300 py-3 text-base font-medium"
-                  style={{ minHeight: 44 }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePay}
-                  disabled={processing || !payAmount}
-                  className="flex-1 rounded-lg bg-black py-3 text-base font-medium text-white disabled:opacity-50"
-                  style={{ minHeight: 44 }}
-                >
-                  {processing ? "Processing..." : "Pay"}
-                </button>
               </div>
             </div>
-          </div>
+          )}
+        </>
+      ) : (
+        <div className="space-y-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-muted">Payment History</h2>
+          {historyLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-20 w-full animate-pulse rounded-2xl bg-surface" />
+              ))}
+            </div>
+          ) : payments.length === 0 ? (
+            <Card className="text-center py-12 border-dashed border-white/10">
+              <p className="text-sm text-muted">No payments recorded yet.</p>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {payments.map((pmt) => (
+                <Card key={pmt._id} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-base font-bold">{pmt.playerName}</span>
+                      <span className="text-xs text-muted">{pmt.date}</span>
+                    </div>
+                    <span className="text-lg font-black text-green-500">Rs {pmt.amount}</span>
+                  </div>
+                  {pmt.allocations.length > 0 && (
+                    <div className="border-t border-border pt-2 space-y-1">
+                      {pmt.allocations.map((a, i) => (
+                        <div key={i} className="flex justify-between text-xs text-muted">
+                          <span>Penalty: {a.penaltyDate}</span>
+                          <span>Rs {a.amount}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

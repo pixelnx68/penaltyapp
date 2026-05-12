@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { ObjectId } from "mongodb";
 import { getCollection } from "../mongodb";
 import { Penalty } from "../models/penalty";
+import { PaymentAllocation } from "../models/payment";
 
 export async function getPlayerByPhone(phone: string) {
   const col = await getCollection("players");
@@ -54,6 +55,16 @@ export async function logPenalty(playerId: string, date: string, amount: number,
     paidAmount: 0,
     status: "unpaid",
   });
+
+  revalidatePath("/");
+  revalidatePath("/log");
+  revalidatePath("/ledger");
+  revalidatePath("/payments");
+}
+
+export async function deletePenalty(id: string) {
+  const col = await getCollection("penalties");
+  await col.deleteOne({ _id: new ObjectId(id) });
 
   revalidatePath("/");
   revalidatePath("/log");
@@ -120,8 +131,11 @@ export async function processPayment(playerId: string, amount: number) {
     .sort({ date: 1 })
     .toArray();
 
+  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" });
+  const paymentDate = fmt.format(new Date());
   let remaining = amount;
   const results: { date: string; amount: number; status: string }[] = [];
+  const allocations: PaymentAllocation[] = [];
 
   for (const penalty of unpaidPenalties) {
     if (remaining <= 0) break;
@@ -146,10 +160,23 @@ export async function processPayment(playerId: string, amount: number) {
     );
 
     results.push({ date: penalty.date, amount: allocation, status: newStatus });
+    allocations.push({ penaltyDate: penalty.date, amount: allocation });
+  }
+
+  if (allocations.length > 0) {
+    const paymentsCol = await getCollection("payments");
+    await paymentsCol.insertOne({
+      playerId: new ObjectId(playerId),
+      date: paymentDate,
+      amount: amount - remaining,
+      allocations,
+      createdAt: new Date(),
+    });
   }
 
   revalidatePath("/payments");
   revalidatePath("/ledger");
+  revalidatePath("/log");
   revalidatePath("/");
 
   return {

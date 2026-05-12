@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getLedger } from "@/lib/actions/penalties";
+import { Card, Badge } from "@/components/ui";
 
 interface LedgerEntry {
   _id: string;
@@ -21,40 +22,44 @@ export default function LedgerPage() {
     });
   }, []);
 
-  if (loading) {
-    return <p className="text-center text-gray-400 py-8">Loading ledger...</p>;
-  }
-
-  if (entries.length === 0) {
-    return (
-      <div className="px-4 pt-4">
-        <h1 className="text-xl font-bold mb-4">Debt Ledger</h1>
-        <p className="text-center text-gray-400 py-8">No outstanding debts</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="px-4 pt-4">
-      <h1 className="text-xl font-bold mb-4">Debt Ledger</h1>
-      <ul className="space-y-2">
-        {entries.map((entry) => (
-          <li
-            key={entry._id}
-            className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3"
-          >
-            <div className="flex flex-col">
-              <span className="text-base font-medium">{entry.name}</span>
-              {entry.phone && (
-                <span className="text-sm text-gray-500">{entry.phone}</span>
-              )}
-            </div>
-            <span className="text-base font-semibold text-red-600">
-              Rs {entry.totalUnpaid}
-            </span>
-          </li>
-        ))}
-      </ul>
+    <div className="space-y-6 pb-10">
+      <header>
+        <h1 className="text-2xl font-bold">Debt <span className="text-primary">Ledger</span></h1>
+        <p className="text-sm text-muted">Summary of all outstanding penalties.</p>
+      </header>
+
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-20 w-full animate-pulse rounded-2xl bg-surface" />
+          ))}
+        </div>
+      ) : entries.length === 0 ? (
+        <Card className="text-center py-12 border-dashed border-white/10">
+          <p className="text-sm text-muted">No outstanding debts. Everyone is clear!</p>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {entries.map((entry) => (
+            <Card
+              key={entry._id}
+              className="flex items-center justify-between hover:translate-x-1 transition-transform"
+            >
+              <div className="flex flex-col">
+                <span className="text-base font-bold">{entry.name}</span>
+                {entry.phone && (
+                  <span className="text-xs text-muted">{entry.phone}</span>
+                )}
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-black text-secondary">Rs {entry.totalUnpaid}</p>
+                <Badge variant="danger">Due</Badge>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

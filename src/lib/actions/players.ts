@@ -51,7 +51,9 @@ export async function updatePlayer(_prevState: unknown, formData: FormData) {
 export async function deletePlayer(id: string) {
   const col = await getCollection("players");
   const penaltiesCol = await getCollection("penalties");
+  const paymentsCol = await getCollection("payments");
 
+  await paymentsCol.deleteMany({ playerId: new ObjectId(id) });
   await penaltiesCol.deleteMany({ playerId: new ObjectId(id) });
   await col.deleteOne({ _id: new ObjectId(id) });
 

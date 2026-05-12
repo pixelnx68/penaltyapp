@@ -3,6 +3,7 @@
 import { useEffect, useState, useActionState } from "react";
 import { getPlayers, addPlayer, updatePlayer, deletePlayer } from "@/lib/actions/players";
 import Toast from "@/components/Toast";
+import { Button, Input, Card, Badge } from "@/components/ui";
 
 interface Player {
   _id: string;
@@ -66,12 +67,13 @@ export default function AdminPage() {
     }
   };
 
-  if (loading) {
-    return <p className="text-center text-gray-400 py-8">Loading players...</p>;
-  }
-
   return (
-    <div className="px-4 pt-4">
+    <div className="space-y-8 pb-10">
+      <header>
+        <h1 className="text-2xl font-bold">Manage <span className="text-primary">Players</span></h1>
+        <p className="text-sm text-muted">Add or update team members.</p>
+      </header>
+
       {toast && (
         <Toast
           message={toast.message}
@@ -80,141 +82,140 @@ export default function AdminPage() {
         />
       )}
 
-      <h1 className="text-xl font-bold mb-4">Manage Players</h1>
-
-      <form action={addAction} className="flex flex-col gap-2 mb-6">
-        <div className="flex gap-2">
-          <input
+      <Card className="bg-surface/50">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-muted mb-4">Add New Player</h2>
+        <form action={addAction} className="space-y-4">
+          <Input
             name="name"
-            type="text"
-            placeholder="Player name"
+            placeholder="Full Name"
             required
-            className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-black"
-            style={{ minHeight: 44 }}
           />
-          <button
+          <Input
+            name="phone"
+            type="tel"
+            placeholder="Phone Number (optional)"
+          />
+          <Button
             type="submit"
-            disabled={addPending}
-            className="rounded-lg bg-black px-6 py-3 text-base font-medium text-white disabled:opacity-50"
-            style={{ minHeight: 44 }}
+            isLoading={addPending}
+            className="w-full py-4"
           >
-            {addPending ? "..." : "Add"}
-          </button>
-        </div>
-        <input
-          name="phone"
-          type="tel"
-          placeholder="Phone number (optional)"
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-black"
-          style={{ minHeight: 44 }}
-        />
-      </form>
+            Add Team Member
+          </Button>
+        </form>
+      </Card>
 
-      <ul className="space-y-2">
-        {players.map((player) => {
-          const id = player._id;
-          const isEditing = editingId === id;
+      <div className="space-y-3">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-muted">Active Roster</h2>
+        {loading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 w-full animate-pulse rounded-2xl bg-surface" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {players.map((player) => {
+              const id = player._id;
+              const isEditing = editingId === id;
 
-          return (
-            <li
-              key={id}
-              className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3"
-            >
-              {isEditing ? (
-                <div className="flex flex-col flex-1 gap-2">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="flex-1 rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-black"
-                      style={{ minHeight: 44 }}
-                      autoFocus
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="tel"
-                      value={editPhone}
-                      onChange={(e) => setEditPhone(e.target.value)}
-                      placeholder="Phone (optional)"
-                      className="flex-1 rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-black"
-                      style={{ minHeight: 44 }}
-                    />
-                    <button
-                      onClick={() => handleEdit(id)}
-                      className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white"
-                      style={{ minHeight: 44 }}
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium"
-                      style={{ minHeight: 44 }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex flex-col">
-                    <span className="text-base font-medium">{player.name}</span>
-                    {player.phone && (
-                      <span className="text-sm text-gray-500">{player.phone}</span>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setEditingId(id);
-                        setEditName(player.name);
-                        setEditPhone(player.phone || "");
-                      }}
-                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium"
-                      style={{ minHeight: 44 }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => setConfirmDelete(id)}
-                      className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white"
-                      style={{ minHeight: 44 }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+              return (
+                <Card key={id} className="transition-all">
+                  {isEditing ? (
+                    <div className="space-y-4 animate-in">
+                      <Input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        placeholder="Name"
+                        autoFocus
+                      />
+                      <Input
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                        placeholder="Phone"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => setEditingId(null)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleEdit(id)}
+                        >
+                          Save Changes
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-base font-bold">{player.name}</span>
+                        {player.phone ? (
+                          <span className="text-xs text-muted">{player.phone}</span>
+                        ) : (
+                          <Badge variant="info">No Phone</Badge>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingId(id);
+                            setEditName(player.name);
+                            setEditPhone(player.phone || "");
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:bg-red-500/10 hover:text-red-500"
+                          onClick={() => setConfirmDelete(id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-sm rounded-xl bg-white p-6">
-            <p className="text-base mb-4">
-              Delete this player and all their penalty records?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="flex-1 rounded-lg border border-gray-300 py-3 text-base font-medium"
-                style={{ minHeight: 44 }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(confirmDelete)}
-                className="flex-1 rounded-lg bg-red-600 py-3 text-base font-medium text-white"
-                style={{ minHeight: 44 }}
-              >
-                Delete
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <Card className="w-full max-sm space-y-6 bg-surface p-8 shadow-2xl">
+            <div className="text-center space-y-2">
+              <h3 className="text-xl font-bold">Remove Player?</h3>
+              <p className="text-sm text-muted">This will delete the player and all their history. This cannot be undone.</p>
             </div>
-          </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setConfirmDelete(null)}
+              >
+                Keep
+              </Button>
+              <Button
+                variant="danger"
+                className="flex-1"
+                onClick={() => handleDelete(confirmDelete)}
+              >
+                Confirm Delete
+              </Button>
+            </div>
+          </Card>
         </div>
       )}
     </div>
