@@ -6,6 +6,7 @@ export interface Penalty {
   _id: ObjectId;
   playerId: ObjectId;
   date: string;
+  time?: string;
   amount: number;
   paidAmount: number;
   status: PenaltyStatus;

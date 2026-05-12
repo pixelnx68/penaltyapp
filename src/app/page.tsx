@@ -1,124 +1,130 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { getPlayers } from "@/lib/actions/players";
-import { getDailyPenalties, logPenalty } from "@/lib/actions/penalties";
-import Toast from "@/components/Toast";
+import { useState } from "react";
+import { getPlayerByPhone } from "@/lib/actions/penalties";
 
-interface Player {
-  _id: string;
-  name: string;
-  phone?: string;
+interface PenaltyRecord {
+  date: string;
+  time?: string;
+  amount: number;
+  paidAmount: number;
+  status: string;
+  remaining: number;
 }
 
-export default function QuickLogPage() {
-  const today = new Date().toISOString().split("T")[0];
-  const [date, setDate] = useState(today);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [penalized, setPenalized] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
+interface PlayerInfo {
+  name: string;
+  totalUnpaid: number;
+  penalties: PenaltyRecord[];
+}
 
-  useEffect(() => {
-    startTransition(async () => {
-      setLoading(true);
-      try {
-        const [allPlayers, penaltyMap] = await Promise.all([
-          getPlayers(),
-          getDailyPenalties(date),
-        ]);
-        setPlayers(allPlayers as Player[]);
-        const penalizedIds = new Set<string>();
-        for (const [id] of penaltyMap) {
-          penalizedIds.add(id);
-        }
-        setPenalized(penalizedIds);
-      } catch {
-        setToast({ message: "Failed to load data", type: "error" });
-      } finally {
-        setLoading(false);
-      }
-    });
-  }, [date]);
+export default function HomePage() {
+  const [phone, setPhone] = useState("");
+  const [result, setResult] = useState<PlayerInfo | null>(null);
+  const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLog = async (playerId: string) => {
-    setPendingId(playerId);
+  const handleSearch = async () => {
+    if (!phone.trim()) return;
+    setLoading(true);
+    setSearched(true);
     try {
-      await logPenalty(playerId, date);
-      setPenalized((prev) => new Set(prev).add(playerId));
-      setToast({ message: "Penalty logged", type: "success" });
+      const data = await getPlayerByPhone(phone.trim());
+      setResult(data as unknown as PlayerInfo);
     } catch {
-      setToast({ message: "Already logged for this date", type: "error" });
+      setResult(null);
     } finally {
-      setPendingId(null);
+      setLoading(false);
     }
   };
 
   return (
     <div className="px-4 pt-4">
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      <h1 className="text-xl font-bold mb-4">Check My Penalty</h1>
 
-      <div className="mb-4">
-        <label htmlFor="date" className="block text-sm font-medium mb-1">
-          Select Date
-        </label>
+      <div className="flex gap-2 mb-6">
         <input
-          id="date"
-          type="date"
-          value={date}
-          max={today}
-          onChange={(e) => {
-            startTransition(() => setDate(e.target.value));
-          }}
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-black"
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="Enter your phone number"
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-black"
+          style={{ minHeight: 44 }}
         />
+        <button
+          onClick={handleSearch}
+          disabled={loading || !phone.trim()}
+          className="rounded-lg bg-black px-6 py-3 text-base font-medium text-white disabled:opacity-50"
+          style={{ minHeight: 44 }}
+        >
+          {loading ? "..." : "Search"}
+        </button>
       </div>
 
-      {loading ? (
-        <p className="text-center text-gray-400 py-8">Loading players...</p>
-      ) : (
-        <ul className="space-y-2">
-          {players.map((player) => {
-            const id = player._id;
-            const isLogged = penalized.has(id);
-            const isPending = pendingId === id;
+      {searched && !loading && (
+        <>
+          {!result ? (
+            <p className="text-center text-gray-500 py-8">
+              No player found with this phone number
+            </p>
+          ) : (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-gray-200 px-4 py-3">
+                <p className="text-lg font-bold">{result.name}</p>
+                <p className="text-sm text-gray-500">
+                  Total unpaid:{" "}
+                  <span className="font-semibold text-red-600">
+                    Rs {result.totalUnpaid}
+                  </span>
+                </p>
+              </div>
 
-            return (
-              <li
-                key={id}
-                className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3"
-              >
-                <div className="flex flex-col">
-                  <span className="text-base font-medium">{player.name}</span>
-                  {player.phone && (
-                    <span className="text-sm text-gray-500">{player.phone}</span>
-                  )}
-                </div>
-                <button
-                  onClick={() => handleLog(id)}
-                  disabled={isLogged || isPending}
-                  className={`min-w-[72px] rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                    isLogged
-                      ? "bg-green-600 text-white cursor-default"
-                      : "bg-red-600 text-white active:bg-red-700 disabled:opacity-50"
-                  }`}
-                  style={{ minHeight: 44 }}
-                >
-                  {isPending ? "..." : isLogged ? "Done" : "Late"}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+              {result.penalties.length > 0 ? (
+                <ul className="space-y-2">
+                  {result.penalties.map((p, i) => (
+                    <li
+                      key={i}
+                      className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3"
+                    >
+                      <div>
+                        <p className="text-sm font-medium">
+                          {p.date}
+                          {p.time && <span className="text-gray-400 ml-1">{p.time}</span>}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {p.status === "paid"
+                            ? "Paid"
+                            : p.status === "partial"
+                            ? `Partially paid — Rs ${p.remaining} remaining`
+                            : `Unpaid — Rs ${p.amount}`}
+                        </p>
+                      </div>
+                      <span
+                        className={`text-sm font-medium ${
+                          p.status === "paid"
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        Rs {p.remaining}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-center text-gray-500 py-4">
+                  No penalty records
+                </p>
+              )}
+            </div>
+          )}
+        </>
       )}
+
+      <p className="mt-8 text-center text-xs text-gray-400">
+        Enter the phone number registered with your team admin
+      </p>
     </div>
   );
 }

@@ -25,6 +25,7 @@ export async function addPlayer(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/");
+  revalidatePath("/log");
   revalidatePath("/payments");
   revalidatePath("/ledger");
 }
@@ -42,6 +43,7 @@ export async function updatePlayer(_prevState: unknown, formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/");
+  revalidatePath("/log");
   revalidatePath("/payments");
   revalidatePath("/ledger");
 }
@@ -55,6 +57,7 @@ export async function deletePlayer(id: string) {
 
   revalidatePath("/admin");
   revalidatePath("/");
+  revalidatePath("/log");
   revalidatePath("/payments");
   revalidatePath("/ledger");
 }
