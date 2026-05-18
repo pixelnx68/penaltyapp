@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { getPlayerByPhone } from "@/lib/actions/penalties";
 import { Button, Input, Card, Badge } from "@/components/ui";
 
@@ -20,6 +21,7 @@ interface PlayerInfo {
 }
 
 export default function HomePage() {
+  const router = useRouter();
   const [phone, setPhone] = useState("");
   const [result, setResult] = useState<PlayerInfo | null>(null);
   const [searched, setSearched] = useState(false);
@@ -40,13 +42,32 @@ export default function HomePage() {
   };
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-6 pb-10">
       <header className="space-y-2">
         <h1 className="text-4xl font-black tracking-tight">
           Penalty <span className="text-primary">Tracker</span>
         </h1>
         <p className="text-muted text-sm font-medium">Check your late arrival dues.</p>
       </header>
+
+      {/* Sleek Scoreboard Entry Banner */}
+      <Card
+        className="border border-primary/20 bg-primary/5 p-4 flex items-center justify-between hover:border-primary/40 hover:bg-primary/10 transition-all cursor-pointer group"
+        onClick={() => router.push("/score")}
+      >
+        <div className="space-y-1 pr-4">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🏐</span>
+            <span className="text-xs font-black uppercase text-primary tracking-widest">Live Match Scoreboard</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+          </div>
+          <p className="text-sm font-bold text-white">Track & score 11-point games in real time!</p>
+          <p className="text-[10px] text-muted">Tap to launch live scoreboard, log matches, and share public links.</p>
+        </div>
+        <div className="h-10 w-10 shrink-0 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary group-hover:scale-105 group-hover:bg-primary/20 transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </Card>
 
       <div className="space-y-4">
         <div className="flex gap-2">

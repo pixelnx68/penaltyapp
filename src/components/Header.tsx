@@ -100,26 +100,38 @@ export default function Header() {
             </span>
           </Link>
 
-          {/* Download Button */}
-          {shouldShowButton ? (
-            <button
-              onClick={handleInstallClick}
-              className="relative flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/25 px-3 py-1.5 text-xs font-bold text-white shadow-[0_0_15px_rgba(59,130,246,0.1)] active:scale-95 transition-all duration-300 hover:from-primary/20 hover:to-secondary/20 hover:border-primary/40 hover:shadow-[0_0_20px_rgba(59,130,246,0.25)] animate-[bounce-subtle_2s_infinite]"
+          {/* Right Action Items */}
+          <div className="flex items-center gap-2">
+            {/* Live Scoreboard Link */}
+            <Link
+              href="/score"
+              className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.04] border border-white/10 text-white/80 hover:text-white hover:bg-white/[0.08] active:scale-90 transition-all shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+              title="Live Scoreboard"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary animate-pulse">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" x2="12" y1="15" y2="3" />
-              </svg>
-              <span>Download App</span>
-            </button>
-          ) : (
-            /* Subtle decorative badge indicating PWA is running locally */
-            <div className="flex items-center gap-1.5 rounded-full bg-green-500/10 border border-green-500/20 px-2.5 py-1 text-[10px] font-bold text-green-400 uppercase tracking-widest">
-              <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
-              <span>PWA Ready</span>
-            </div>
-          )}
+              <span className="text-sm">🏐</span>
+            </Link>
+
+            {/* Download Button */}
+            {shouldShowButton ? (
+              <button
+                onClick={handleInstallClick}
+                className="relative flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/25 px-3 py-1.5 text-xs font-bold text-white shadow-[0_0_15px_rgba(59,130,246,0.1)] active:scale-95 transition-all duration-300 hover:from-primary/20 hover:to-secondary/20 hover:border-primary/40 hover:shadow-[0_0_20px_rgba(59,130,246,0.25)] animate-[bounce-subtle_2s_infinite]"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary animate-pulse">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" x2="12" y1="15" y2="3" />
+                </svg>
+                <span>Download</span>
+              </button>
+            ) : (
+              /* Subtle decorative badge indicating PWA is running locally */
+              <div className="flex items-center gap-1 border border-green-500/20 bg-green-500/10 px-2 py-1 rounded-xl text-[9px] font-bold text-green-400 uppercase tracking-wider">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                <span>PWA</span>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

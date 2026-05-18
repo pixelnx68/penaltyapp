@@ -16,7 +16,7 @@ export async function login(_prevState: { error?: string } | null, formData: For
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 60 * 60 * 24,
+    maxAge: 60 * 60 * 24 * 90, // 3 months (90 days)
     path: "/",
   });
 
