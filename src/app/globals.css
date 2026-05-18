@@ -12,6 +12,18 @@
   --color-border: rgba(255, 255, 255, 0.1);
 
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+
+  --animate-bounce-subtle: bounce-subtle 2s ease-in-out infinite;
+  --animate-slide-up: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  @keyframes bounce-subtle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 }
 
 @layer base {
