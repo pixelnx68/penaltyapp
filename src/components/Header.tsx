@@ -8,6 +8,7 @@ export default function Header() {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showIosInstructions, setShowIosInstructions] = useState(false);
+  const [showAndroidInstructions, setShowAndroidInstructions] = useState(false);
   const [isIos, setIsIos] = useState(false);
 
   useEffect(() => {
@@ -61,22 +62,24 @@ export default function Header() {
       return;
     }
 
-    if (!deferredPrompt) return;
+    if (deferredPrompt) {
+      // Show the browser's install prompt
+      deferredPrompt.prompt();
 
-    // Show the browser's install prompt
-    deferredPrompt.prompt();
-
-    // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") {
-      setIsInstallable(false);
-      setDeferredPrompt(null);
+      // Wait for the user to respond to the prompt
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        setIsInstallable(false);
+        setDeferredPrompt(null);
+      }
+    } else {
+      // Prompt native dialog not available (e.g. non-HTTPS mobile chrome or delayed), show custom Android instructions
+      setShowAndroidInstructions(true);
     }
   };
 
-  // Show the install button if the app is not already running standalone, AND
-  // either the browser prompt is available or the user is on an iOS device.
-  const shouldShowButton = !isStandalone && (isInstallable || isIos);
+  // Always show the install button if the app is not already running in standalone/installed mode
+  const shouldShowButton = !isStandalone;
 
   return (
     <>
@@ -191,6 +194,71 @@ export default function Header() {
             <div className="flex gap-3 pt-2">
               <button 
                 onClick={() => setShowIosInstructions(false)}
+                className="w-full rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 py-3 text-sm font-bold text-white transition-all active:scale-95 cursor-pointer text-center"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Android / Chrome Browser Custom Instructions Modal */}
+      {showAndroidInstructions && (
+        <div 
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xs px-4 transition-opacity duration-300"
+          onClick={() => setShowAndroidInstructions(false)}
+        >
+          <div 
+            className="w-full max-w-[480px] rounded-t-3xl border-t border-white/10 bg-[#161b22]/95 px-6 pb-10 pt-6 shadow-2xl backdrop-blur-md animate-[slide-up_0.3s_cubic-bezier(0.16,1,0.3,1)] flex flex-col space-y-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Handle/Indicator */}
+            <div className="mx-auto h-1.5 w-12 rounded-full bg-white/10" />
+
+            {/* Header */}
+            <div className="text-center space-y-1">
+              <h3 className="text-xl font-extrabold text-white">Install on Chrome / Android</h3>
+              <p className="text-xs text-muted">Add this app to your home screen for instant access, offline support, and full mobile integration.</p>
+            </div>
+
+            {/* Steps Container */}
+            <div className="space-y-4">
+              {/* Step 1 */}
+              <div className="flex items-center gap-4 rounded-2xl bg-white/[0.02] p-3.5 border border-white/5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary">
+                  <span className="text-base font-extrabold">1</span>
+                </div>
+                <div className="text-sm font-semibold text-white/90 flex-grow leading-relaxed">
+                  Tap the browser's **menu button (three vertical dots ⋮)** in the top-right corner.
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex items-center gap-4 rounded-2xl bg-white/[0.02] p-3.5 border border-white/5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/10 border border-secondary/20 text-secondary">
+                  <span className="text-base font-extrabold">2</span>
+                </div>
+                <div className="text-sm font-semibold text-white/90 flex-grow leading-relaxed">
+                  Select <span className="text-secondary font-extrabold">"Install app"</span> or <span className="text-secondary font-extrabold">"Add to Home Screen"</span> from the list.
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex items-center gap-4 rounded-2xl bg-white/[0.02] p-3.5 border border-white/5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-500/10 border border-green-500/20 text-green-400">
+                  <span className="text-base font-extrabold">3</span>
+                </div>
+                <div className="text-sm font-semibold text-white/90 flex-grow leading-relaxed">
+                  Confirm by tapping <span className="text-green-400 font-extrabold">"Install"</span> or <span className="text-green-400 font-extrabold">"Add"</span>.
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-2">
+              <button 
+                onClick={() => setShowAndroidInstructions(false)}
                 className="w-full rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 py-3 text-sm font-bold text-white transition-all active:scale-95 cursor-pointer text-center"
               >
                 Got It
